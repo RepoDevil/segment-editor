@@ -44,6 +44,11 @@ jobs:
             - name: Install dependencies
               run: pnpm install
 
+            - name: Initialize project
+              run: pnpm tauri android init
+              env:
+                  NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.11902837
+
             - name: Build app bundle
               run: pnpm tauri android build -v
               env:

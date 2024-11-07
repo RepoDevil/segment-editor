@@ -39,10 +39,18 @@ jobs:
             args: ''
           - platform: 'windows-latest'
             args: ''
+          - platform: 'ubuntu-latest'
+            args: ''
+            android: true
 
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.x.x
 
       - name: setup node
         uses: actions/setup-node@v4
@@ -53,7 +61,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || matrix.android && 'aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android' || '' }}
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
@@ -61,19 +69,77 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad
 
-      - name: install frontend dependencies
-        run: npm install # change this to npm, pnpm or bun depending on which one you use.
+      - name: Setup Java
+        if: matrix.android
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
-      - uses: tauri-apps/tauri-action@v0
+      - name: Setup Android SDK
+        if: matrix.android
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Android NDK
+        if: matrix.android
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26d
+          link-to-sdk: true
+
+      - name: install frontend dependencies
+        run: pnpm install # change this to npm, pnpm or bun depending on which one you use.
+
+      - name: init android
+        if: matrix.android
+        env:
+          NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: |
+          pnpm add -D @tauri-apps/cli
+          pnpm tauri android init
+          pnpm tauri icon public/icon.png
+
+      - uses: intro-skipper/tauri-action@2a2f2a82549f0aacb51f9f7720471f118386ae7e
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         with:
           tagName: ${{ github.ref_name }} # the action automatically replaces \_\_VERSION\_\_ with the app version.
           releaseName: 'Jellyfin Segment Editor __VERSION__'
           releaseBody: ${{ needs.generate-changelog.outputs.release_body }}
           releaseDraft: true
           prerelease: false
+          mobile: ${{ matrix.android || matrix.ios }}
           args: ${{ matrix.args }}
+
+      - name: Modify AndroidManifest
+        if: matrix.android
+        run: |
+          java -jar ManifestEditor-2.0.jar -aa "android-usesCleartextTraffic:true" src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk
+          java -jar uber-apk-signer-1.3.0.jar -apks  src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned-unsigned.apk
+
+      - name: Get Node project version
+        if: matrix.android
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+
+      - name: Rename APK file
+        if: matrix.android
+        run: |
+          mv ./src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-aligned-debugSigned.apk ./src-tauri/gen/android/app/build/outputs/apk/universal/release/Jellyfin.Segment.Editor_${{ steps.package-version.outputs.current-version}}.apk
+
+      - name: Publish
+        if: matrix.android
+        uses: softprops/action-gh-release@v2.0.8
+        with:
+          draft: true
+          name: Jellyfin Segment Editor ${{ steps.package-version.outputs.current-version}}
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: false
+          files: src-tauri/gen/android/app/build/outputs/apk/universal/release/Jellyfin.Segment.Editor_*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   docker:
     runs-on: ubuntu-latest

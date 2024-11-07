@@ -1,0 +1,76 @@
+name: 'Tauri Android'
+
+on:
+    workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+    publish-android:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 8
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: 'zulu'
+                  java-version: '17'
+
+            - name: Setup Android SDK
+              uses: android-actions/setup-android@v3
+
+            - name: Install NDK
+              run: sdkmanager "ndk;27.0.11902837"
+
+            - name: Setup node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: lts/*
+
+            - name: Install Rust stable
+              uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+            - name: Install app packages
+              run: pnpm install
+
+            - name: Compile app bundle
+              run: |
+                  pnpm tauri android init
+                  pnpm tauri icon public/icon.png
+                  pnpm tauri android build
+              env:
+                  NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.11902837
+
+            - name: Modify AndroidManifest
+              run: |
+                  java -jar ManifestEditor-2.0.jar -aa "android-usesCleartextTraffic:true" src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk
+                  java -jar uber-apk-signer-1.3.0.jar -apks  src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned-unsigned.apk
+
+            - name: Get Node project version
+              id: package-version
+              uses: martinbeentjes/npm-get-version-action@v1.3.1
+
+            - name: Rename APK file
+              run: |
+                  mv ./src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-aligned-debugSigned.apk ./src-tauri/gen/android/app/build/outputs/apk/universal/release/Jellyfin.Segment.Editor_${{ steps.package-version.outputs.current-version}}.apk
+
+            - name: Publish
+              uses: softprops/action-gh-release@v2.0.8
+              with:
+                  draft: false
+                  name: Jellyfin Segment Editor Android ${{ steps.package-version.outputs.current-version}}
+                  tag_name: ${{ steps.package-version.outputs.current-version}}-android
+                  generate_release_notes: true
+                  files: src-tauri/gen/android/app/build/outputs/apk/universal/release/Jellyfin.Segment.Editor_*.apk
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

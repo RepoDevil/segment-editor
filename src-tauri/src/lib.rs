@@ -1,3 +1,4 @@
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use tauri_plugin_window_state::StateFlags;
 
 mod commands;
@@ -5,9 +6,11 @@ mod commands;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let context = tauri::generate_context!();
-    let builder = tauri::Builder::default();
+    let mut builder = tauri::Builder::default();
 
-    builder
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+{
+    builder = builder
         .plugin(
             tauri_plugin_window_state::Builder::new()
                 .with_state_flags(
@@ -19,6 +22,8 @@ pub fn run() {
                 )
                 .build(),
         )
+}
+    builder
         .invoke_handler(tauri::generate_handler![commands::show_main_window])
         .run(context)
         .expect("error while running tauri application");

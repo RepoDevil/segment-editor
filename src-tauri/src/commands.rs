@@ -8,5 +8,5 @@ pub async fn close_splashscreen(window: tauri::Window) {
     //     splashscreen.close().unwrap();
     // }
     // Show main window
-    window.get_webview_window("main").unwrap().show().unwrap();
+    // window.get_webview_window("main").unwrap().show().unwrap();
 }

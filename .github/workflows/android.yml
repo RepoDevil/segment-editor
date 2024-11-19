@@ -59,7 +59,9 @@ jobs:
               run: pnpm install
 
             - name: Initialize app bundle
-              run: pnpm tauri android init
+              run: |
+                  pnpm tauri android init
+                  pnpm tauri icon public/icon.png
               env:
                   NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.11902837
 

@@ -3,7 +3,7 @@ name: 'Tauri Android'
 on:
     push:
         branches:
-            - main
+            - android
 
     workflow_dispatch:
 
@@ -79,7 +79,7 @@ jobs:
 
             - name: Rename APK file
               run: |
-                  mv ./src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-aligned-debugSigned.apk ./src-tauri/gen/android/app/build/outputs/apk/universal/release/segment-editor-${{ steps.package-version.outputs.current-version}}.apk
+                  mv ./src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-aligned-debugSigned.apk ./src-tauri/gen/android/app/build/outputs/apk/universal/release/Jellyfin.Segment.Editor_${{ steps.package-version.outputs.current-version}}.apk
 
             - name: Purge past releases
               uses: dev-drprasad/delete-older-releases@v0.3.4
@@ -92,9 +92,9 @@ jobs:
               uses: softprops/action-gh-release@v2.0.8
               with:
                   draft: false
-                  name: Segment Editor v${{ steps.package-version.outputs.current-version}}-${{ env.GIT_HASH }}
+                  name: Jellyfin Segment Editor ${{ steps.package-version.outputs.current-version}}-${{ env.GIT_HASH }}
                   tag_name: ${{ steps.package-version.outputs.current-version}}-${{ env.GIT_HASH }}
                   generate_release_notes: true
-                  files: src-tauri/gen/android/app/build/outputs/apk/universal/release/segment-editor-*.apk
+                  files: src-tauri/gen/android/app/build/outputs/apk/universal/release/Jellyfin.Segment.Editor_*.apk
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

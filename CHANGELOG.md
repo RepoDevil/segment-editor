@@ -1,4 +1,21 @@
 
+## [0.4.5](https://github.com/intro-skipper/segment-editor/compare/0.4.4..0.4.5) - 2024-12-04
+
+### ⛰️  Features
+
+- Initial android build - ([d0ca712](https://github.com/intro-skipper/segment-editor/commit/d0ca7121570703618c04e05161d8d018ee32bed6))
+- Split android by arch - ([070bd4c](https://github.com/intro-skipper/segment-editor/commit/070bd4c9997f269f91ac97d794570e712bd7f225))
+
+### ⚙️ Miscellaneous Tasks
+
+- More tauri updates - ([4588879](https://github.com/intro-skipper/segment-editor/commit/4588879b8528533db2f48792c24f066ea3cd1098))
+- Port changelog to org - ([aa83181](https://github.com/intro-skipper/segment-editor/commit/aa831812f52bb9a1f35ba41078e20cba81ad150a))
+- Port packages to org - ([192680c](https://github.com/intro-skipper/segment-editor/commit/192680c839b52bfbbbb6dd741a14aa70b6fec9f1))
+
+## New Contributors ❤️
+
+* @AbandonedCart made their first contribution
+
 ## [0.4.4](https://github.com/intro-skipper/segment-editor/compare/0.4.3..0.4.4) - 2024-11-25
 
 ### 🐛 Bug Fixes

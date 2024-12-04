@@ -182,5 +182,5 @@ jobs:
 
       - name: Build Image
         run: |
-          docker build . --tag ghcr.io/endrl/jellyfin-se:latest
-          docker push ghcr.io/endrl/jellyfin-se:latest
+          docker build . --tag ghcr.io/intro-skipper/jellyfin-se:latest
+          docker push ghcr.io/intro-skipper/jellyfin-se:latest
